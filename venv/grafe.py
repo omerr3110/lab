@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+
 
 def grade_calc(ser):
     grade=ser.sum()/12
