@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def grade_calc(ser):
@@ -90,7 +91,7 @@ if __name__ == '__main__':
     translation=translation.dropna(axis=1)
     dicts=create_dict(translation)
     trans_dict=dicts[0]
-    result=virus_prot_grade_calc(interactions,file1,trans_dict)
+    #result=virus_prot_grade_calc(interactions,file1,trans_dict)
     bank['symbol']=bank['symbol'].apply(translate)
     bank=bank.set_index('symbol')
     background=bank.join(file1)
@@ -101,6 +102,32 @@ if __name__ == '__main__':
     active=interactions.join(file1)
     active = active.dropna()
     active.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax1)
+    all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
+    all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
+    all_pr8 = all_pr8.drop([0, 1, 2])
+    all_pr8 = all_pr8.rename({"Spectral count": "sc rep1", np.nan: "sc rep2"}, axis=1)
+    all_pr8['Gene'] = all_pr8['Gene'].apply(translate)
+    all_pr8 = all_pr8.set_index('Gene')
+    is_dup = all_pr8.index.duplicated(keep='first')
+    not_dup = ~is_dup
+    single_pr8 = all_pr8[not_dup]
+    background2 = single_pr8.join(file1)
+    background2 = background2.dropna()
+    ax2 = background2.plot.scatter(x='r_pos', y='t_pos', c='gray')
+    inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
+    inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
+    inf_inter = inf_inter.drop([0, 1, 2])
+    inf_inter['Gene ID']=inf_inter['Gene ID'].apply(translate)
+    inf_inter = inf_inter.set_index('Gene ID')
+    is_dup2 = inf_inter.index.duplicated(keep='first')
+    not_dup2 = ~is_dup2
+    single_inf_inter = inf_inter[not_dup2]
+    act=inf_inter.join(file1)
+    act=act.dropna()
+    act.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax2)
+
+
+
     plt.show()
 
 
