@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 
 def grade_calc(ser):
@@ -60,7 +61,7 @@ def create_dict(file):
     return (human_to_mouse, mouse_to_human)
 
 def translate(gene):
-    return translate_full(gene,file1,trans_dict)
+    return translate_full(gene,corr,trans_dict)
 
 def translate_full(gene,file,dictt):
     name=gene
@@ -76,33 +77,36 @@ if __name__ == '__main__':
     xls=pd.ExcelFile(r'C:\Users\omerr\PycharmProjects\lab\venv\Cell2009_Shapira_et al_data.xls')
     interactions=pd.read_excel(xls,'4.viral-host PR8')
     bank= pd.read_excel(xls,'1.Gene expression')
-    file1=total_file.dropna()
-    file1 = file1.set_index('Gene')
-    R_file=file1.iloc[:,2:14]
-    T_file=file1.iloc[:,14:26]
-    positions=file1.iloc[:,:2]
+    corr=total_file.dropna()
+    corr = corr.set_index('Gene')
+    R_file=corr.iloc[:,2:14]
+    T_file=corr.iloc[:,14:26]
+    positions=corr.iloc[:,:2]
     num=R_file.shape[0]
     t_grades=[grade_calc(T_file.iloc[i]) for i in range(num)]
     r_grades=[grade_calc(R_file.iloc[i]) for i in range(num)]
-    file1['average_t_grade']=t_grades
-    file1['average_r_grade']=r_grades
+    corr['average_t_grade']=t_grades
+    corr['average_r_grade']=r_grades
     translation=pd.read_csv(r'HMD_HumanPhenotype.rpt.txt',delimiter="\t")
     translation.columns=['1','2','3','4','5','6']
     translation=translation.dropna(axis=1)
     dicts=create_dict(translation)
     trans_dict=dicts[0]
-    #result=virus_prot_grade_calc(interactions,file1,trans_dict)
+    #result=virus_prot_grade_calc(interactions,corr,trans_dict)
     bank['symbol']=bank['symbol'].apply(translate)
     bank=bank.set_index('symbol')
-    background=bank.join(file1)
+    background=bank.join(corr)
     background=background.dropna()
-    ax1=background.plot.scatter(x='r_pos',y='t_pos',c='gray')
+    #ax1=background.plot.scatter(x='r_pos',y='t_pos',c='gray')
     interactions['Host symbol'] = interactions['Host symbol'].apply(translate)
     interactions=interactions.set_index('Host symbol')
-    active=interactions.join(file1)
+    active=interactions.join(corr)
     active = active.dropna()
-    active.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax1)
+    #active.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax1)
     all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
+    sns.set_theme()
+    graph1=sns.relplot(data=background,x='r_pos',y='t_pos',color="grey")
+    sns.scatterplot(data=active,x='r_pos',y='t_pos',color="red")
     all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
     all_pr8 = all_pr8.drop([0, 1, 2])
     all_pr8 = all_pr8.rename({"Spectral count": "sc rep1", np.nan: "sc rep2"}, axis=1)
@@ -111,9 +115,9 @@ if __name__ == '__main__':
     is_dup = all_pr8.index.duplicated(keep='first')
     not_dup = ~is_dup
     single_pr8 = all_pr8[not_dup]
-    background2 = single_pr8.join(file1)
+    background2 = single_pr8.join(corr)
     background2 = background2.dropna()
-    ax2 = background2.plot.scatter(x='r_pos', y='t_pos', c='gray')
+    #ax2 = background2.plot.scatter(x='r_pos', y='t_pos', c='gray')
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
     inf_inter = inf_inter.drop([0, 1, 2])
@@ -122,12 +126,11 @@ if __name__ == '__main__':
     is_dup2 = inf_inter.index.duplicated(keep='first')
     not_dup2 = ~is_dup2
     single_inf_inter = inf_inter[not_dup2]
-    act=inf_inter.join(file1)
+    act=inf_inter.join(corr)
     act=act.dropna()
-    act.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax2)
-
-
-
+    #act.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax2)
+    ax2=sns.relplot(data=background2, x='r_pos', y='t_pos', color="blue")
+    sns.scatterplot(data=act, x='r_pos', y='t_pos', color="red")
     plt.show()
 
 
