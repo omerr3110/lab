@@ -11,6 +11,7 @@ if __name__ == '__main__':
     all_pr8 = all_pr8.drop([0, 1, 2])
     all_pr8 = all_pr8.rename({"Spectral count": "sc rep1", np.nan: "sc rep2"}, axis=1)
     all_pr8=all_pr8.set_index('Gene')
+    print(all_pr8)
     is_dup=all_pr8.index.duplicated(keep='first')
     not_dup=~is_dup
     single_pr8=all_pr8[not_dup]

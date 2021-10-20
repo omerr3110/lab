@@ -1,7 +1,12 @@
+import math
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import scipy as sp
+from scipy.stats import ranksums
+
 
 
 def grade_calc(ser):
@@ -71,6 +76,22 @@ def translate_full(gene,file,dictt):
                 name=option
     return name
 
+def vector_creator(db,prog):
+    base=db.join(corr)
+    base=base.dropna()
+    if prog=="t":
+        vector1 = base['t_pos']
+        vector1 = vector1.to_numpy()
+        vector2 = background2['t_pos']
+        vector2 = vector2.to_numpy()
+    if prog=="r":
+        vector1 = base['r_pos']
+        vector1 = vector1.to_numpy()
+        vector2 = background2['r_pos']
+        vector2 = vector2.to_numpy()
+    return (vector1,vector2,base)
+
+
 if __name__ == '__main__':
     total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
     total_file.rename(columns={'Unnamed: 0': 'Gene','Unnamed: 1': 't_pos','Unnamed: 2': 'r_pos'}, inplace=True)
@@ -98,15 +119,18 @@ if __name__ == '__main__':
     background=bank.join(corr)
     background=background.dropna()
     #ax1=background.plot.scatter(x='r_pos',y='t_pos',c='gray')
-    interactions['Host symbol'] = interactions['Host symbol'].apply(translate)
+    '''interactions['Host symbol'] = interactions['Host symbol'].apply(translate)
     interactions=interactions.set_index('Host symbol')
     active=interactions.join(corr)
     active = active.dropna()
     #active.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax1)
-    all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
     sns.set_theme()
     graph1=sns.relplot(data=background,x='r_pos',y='t_pos',color="grey")
-    sns.scatterplot(data=active,x='r_pos',y='t_pos',color="red")
+    sns.scatterplot(data=active,x='r_pos',y='t_pos',color="red")'''
+
+
+    #second_db
+    all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
     all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
     all_pr8 = all_pr8.drop([0, 1, 2])
     all_pr8 = all_pr8.rename({"Spectral count": "sc rep1", np.nan: "sc rep2"}, axis=1)
@@ -120,19 +144,30 @@ if __name__ == '__main__':
     #ax2 = background2.plot.scatter(x='r_pos', y='t_pos', c='gray')
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
-    inf_inter = inf_inter.drop([0, 1, 2])
+    inf_inter = inf_inter.drop([0, 1])
     inf_inter['Gene ID']=inf_inter['Gene ID'].apply(translate)
     inf_inter = inf_inter.set_index('Gene ID')
-    is_dup2 = inf_inter.index.duplicated(keep='first')
-    not_dup2 = ~is_dup2
-    single_inf_inter = inf_inter[not_dup2]
-    act=inf_inter.join(corr)
-    act=act.dropna()
-    #act.plot.scatter(x='r_pos',y='t_pos',c='red',ax=ax2)
+    ha_prot=inf_inter[inf_inter['Vrial gene ']=="HA"]
+    m1_prot = inf_inter[inf_inter['Vrial gene '] == "M1"]
+    m2_prot = inf_inter[inf_inter['Vrial gene '] == "M2"]
+    pb_prot = inf_inter[inf_inter['Vrial gene '] == "PB1"]
+    pb1f2_prot = inf_inter[inf_inter['Vrial gene '] == "PB1F2"]
+    pb1_prot=pb_prot.append(pb1f2_prot)
+    pb2_prot = inf_inter[inf_inter['Vrial gene '] == "PB2"]
+    np_prot = inf_inter[inf_inter['Vrial gene '] == "NP"]
+    ns1_prot = inf_inter[inf_inter['Vrial gene '] == "NS1"]
+    ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
+    vectors=vector_creator(ns2_prot,"t")
+    results=ranksums(vectors[0],vectors[1],alternative="greater")
+    pval=results[1]
+    statval=results[0]
+    log_pval=math.log(pval)*-1
+    print(pval)
+    print(statval)
+    act=vectors[2]
     ax2=sns.relplot(data=background2, x='r_pos', y='t_pos', color="blue")
     sns.scatterplot(data=act, x='r_pos', y='t_pos', color="red")
     plt.show()
-
 
 
 
