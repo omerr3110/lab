@@ -91,6 +91,11 @@ def vector_creator(db,prog):
         vector2 = vector2.to_numpy()
     return (vector1,vector2,base)
 
+def NaN_fix(prot):
+    if pd.isna(prot):
+        return "Na"
+
+
 
 if __name__ == '__main__':
     total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
@@ -98,6 +103,7 @@ if __name__ == '__main__':
     xls=pd.ExcelFile(r'C:\Users\omerr\PycharmProjects\lab\venv\Cell2009_Shapira_et al_data.xls')
     interactions=pd.read_excel(xls,'4.viral-host PR8')
     bank= pd.read_excel(xls,'1.Gene expression')
+    x=float("nan")
     corr=total_file.dropna()
     corr = corr.set_index('Gene')
     R_file=corr.iloc[:,2:14]
@@ -147,24 +153,26 @@ if __name__ == '__main__':
     inf_inter = inf_inter.drop([0, 1])
     inf_inter['Gene ID']=inf_inter['Gene ID'].apply(translate)
     inf_inter = inf_inter.set_index('Gene ID')
+    inf_inter['Vrial gene ']=inf_inter['Vrial gene '].apply(NaN_fix)
     ha_prot=inf_inter[inf_inter['Vrial gene ']=="HA"]
     m1_prot = inf_inter[inf_inter['Vrial gene '] == "M1"]
     m2_prot = inf_inter[inf_inter['Vrial gene '] == "M2"]
-    pb_prot = inf_inter[inf_inter['Vrial gene '] == "PB1"]
+    pb1_prot = inf_inter[inf_inter['Vrial gene '] == "PB1"]
     pb1f2_prot = inf_inter[inf_inter['Vrial gene '] == "PB1F2"]
-    pb1_prot=pb_prot.append(pb1f2_prot)
+    pa_prot = inf_inter[inf_inter['Vrial gene '] == "PA"]
     pb2_prot = inf_inter[inf_inter['Vrial gene '] == "PB2"]
+    na_prot = inf_inter[inf_inter['Vrial gene '] == "Na"]
     np_prot = inf_inter[inf_inter['Vrial gene '] == "NP"]
     ns1_prot = inf_inter[inf_inter['Vrial gene '] == "NS1"]
     ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
-    vectors=vector_creator(ns2_prot,"t")
-    results=ranksums(vectors[0],vectors[1],alternative="greater")
+    vectors=vector_creator(na_prot,"t")
+    results=ranksums(vectors[0],vectors[1])
     pval=results[1]
     statval=results[0]
     log_pval=math.log(pval)*-1
-    print(pval)
-    print(statval)
+    print(na_prot)
     act=vectors[2]
+    print(act)
     ax2=sns.relplot(data=background2, x='r_pos', y='t_pos', color="blue")
     sns.scatterplot(data=act, x='r_pos', y='t_pos', color="red")
     plt.show()
