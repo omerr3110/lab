@@ -66,7 +66,7 @@ def create_dict(file):
     return (human_to_mouse, mouse_to_human)
 
 def translate(gene):
-    return translate_full(gene,corr,trans_dict)
+    return translate_full(gene,full_corr,trans_dict)
 
 def translate_full(gene,file,dictt):
     name=gene
@@ -74,46 +74,59 @@ def translate_full(gene,file,dictt):
         for option in dictt[gene]:
             if option in file.index:
                 name=option
+                break
+    elif type(name)==type("str"):
+        name=name.lower()
+        name=name.capitalize()
+    if gene=="SKP1":
+        name="Skp1a"
     return name
 
 def vector_creator(db,prog):
-    base=db.join(corr)
+    base=db.join(full_positions)
     base=base.dropna()
     if prog=="t":
-        vector1 = base['t_pos']
+        vector1 = base['T_position']
         vector1 = vector1.to_numpy()
-        vector2 = background2['t_pos']
+        vector2 = background2['T_position']
         vector2 = vector2.to_numpy()
     if prog=="r":
-        vector1 = base['r_pos']
+        vector1 = base['R_position']
         vector1 = vector1.to_numpy()
-        vector2 = background2['r_pos']
+        vector2 = background2['R_position']
         vector2 = vector2.to_numpy()
     return (vector1,vector2,base)
 
 def NaN_fix(prot):
     if pd.isna(prot):
         return "Na"
+    else:
+        return prot
 
 
 
 if __name__ == '__main__':
-    total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
-    total_file.rename(columns={'Unnamed: 0': 'Gene','Unnamed: 1': 't_pos','Unnamed: 2': 'r_pos'}, inplace=True)
+    #total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
+    #total_file.rename(columns={'Unnamed: 0': 'Gene','Unnamed: 1': 't_pos','Unnamed: 2': 'r_pos'}, inplace=True)
     xls=pd.ExcelFile(r'C:\Users\omerr\PycharmProjects\lab\venv\Cell2009_Shapira_et al_data.xls')
+    xls2=pd.ExcelFile(r'C:\Users\omerr\PycharmProjects\lab\venv\unified_gene_states_corr_with_healthy_sep.igv8.xlsx')
+    full_corr=pd.read_excel(xls2,'Sheet1')
+    full_corr.rename(columns={'Unnamed: 0': 'Gene'},inplace=True)
+    full_corr=full_corr.set_index('Gene')
+    full_positions=full_corr.iloc[:,:2]
+    full_positions=full_positions.dropna()
     interactions=pd.read_excel(xls,'4.viral-host PR8')
     bank= pd.read_excel(xls,'1.Gene expression')
-    x=float("nan")
-    corr=total_file.dropna()
-    corr = corr.set_index('Gene')
-    R_file=corr.iloc[:,2:14]
-    T_file=corr.iloc[:,14:26]
-    positions=corr.iloc[:,:2]
-    num=R_file.shape[0]
-    t_grades=[grade_calc(T_file.iloc[i]) for i in range(num)]
-    r_grades=[grade_calc(R_file.iloc[i]) for i in range(num)]
-    corr['average_t_grade']=t_grades
-    corr['average_r_grade']=r_grades
+    #corr=total_file.dropna()
+    #corr = corr.set_index('Gene')
+    #R_file=corr.iloc[:,2:14]
+    #T_file=corr.iloc[:,14:26]
+    #positions=corr.iloc[:,:2]
+    #num=R_file.shape[0]
+    #t_grades=[grade_calc(T_file.iloc[i]) for i in range(num)]
+    #r_grades=[grade_calc(R_file.iloc[i]) for i in range(num)]
+    #corr['average_t_grade']=t_grades
+    #corr['average_r_grade']=r_grades
     translation=pd.read_csv(r'HMD_HumanPhenotype.rpt.txt',delimiter="\t")
     translation.columns=['1','2','3','4','5','6']
     translation=translation.dropna(axis=1)
@@ -122,7 +135,7 @@ if __name__ == '__main__':
     #result=virus_prot_grade_calc(interactions,corr,trans_dict)
     bank['symbol']=bank['symbol'].apply(translate)
     bank=bank.set_index('symbol')
-    background=bank.join(corr)
+    background=bank.join(full_positions)
     background=background.dropna()
     #ax1=background.plot.scatter(x='r_pos',y='t_pos',c='gray')
     '''interactions['Host symbol'] = interactions['Host symbol'].apply(translate)
@@ -145,7 +158,7 @@ if __name__ == '__main__':
     is_dup = all_pr8.index.duplicated(keep='first')
     not_dup = ~is_dup
     single_pr8 = all_pr8[not_dup]
-    background2 = single_pr8.join(corr)
+    background2 = single_pr8.join(full_positions)
     background2 = background2.dropna()
     #ax2 = background2.plot.scatter(x='r_pos', y='t_pos', c='gray')
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
@@ -165,16 +178,17 @@ if __name__ == '__main__':
     np_prot = inf_inter[inf_inter['Vrial gene '] == "NP"]
     ns1_prot = inf_inter[inf_inter['Vrial gene '] == "NS1"]
     ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
-    vectors=vector_creator(na_prot,"t")
+    vectors=vector_creator(pa_prot,"t")
     results=ranksums(vectors[0],vectors[1])
     pval=results[1]
     statval=results[0]
     log_pval=math.log(pval)*-1
-    print(na_prot)
     act=vectors[2]
-    print(act)
-    ax2=sns.relplot(data=background2, x='r_pos', y='t_pos', color="blue")
-    sns.scatterplot(data=act, x='r_pos', y='t_pos', color="red")
+    rep = act.index.duplicated(keep='first')
+    not_rep = ~rep
+    act = act[not_rep]
+    ax2=sns.relplot(data=background2, x='R_position', y='T_position', color="blue")
+    sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
     plt.show()
 
 
