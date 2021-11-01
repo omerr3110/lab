@@ -194,8 +194,8 @@ if __name__ == '__main__':
     np_prot_corr = corr_back[corr_back['Vrial gene '] == "NP"]
     ns1_prot_corr = corr_back[corr_back['Vrial gene '] == "NS1"]
     ns2_prot_corr = corr_back[corr_back['Vrial gene '] == "NS2"]
-    pearson_calc()
-    #enrichment analysis
+    pearson_calc(ns2_prot_corr)
+    #enrichment analysis - pr8 db
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
     inf_inter = inf_inter.drop([0, 1])
@@ -213,6 +213,14 @@ if __name__ == '__main__':
     np_prot = inf_inter[inf_inter['Vrial gene '] == "NP"]
     ns1_prot = inf_inter[inf_inter['Vrial gene '] == "NS1"]
     ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
+
+    #enrichment analysis - other strains db
+    other_inter= pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
+
+
+
+
+
     vectors=vector_creator(ns2_prot,"r")
     results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
@@ -230,7 +238,7 @@ if __name__ == '__main__':
     act = act[not_rep]
     ax2=sns.relplot(data=background2, x='R_position', y='T_position', color='blue')
     sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
-    plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="copper")
+    plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
     plt.show()
 
 
