@@ -103,6 +103,23 @@ def NaN_fix(prot):
     else:
         return prot
 
+def keep_first(db):
+    rep = db.index.duplicated(keep='first')
+    not_rep = ~rep
+    final = db[not_rep]
+    return final
+
+def pearson_calc(db):
+    db1=no_infection=db[db['IAV infection']=="with"]
+    db2=no_infection=db[db['IAV infection']=="without"]
+    db1 = keep_first(db1)
+    db2 = keep_first(db2)
+    pearson_wt = sp.stats.pearsonr(db1['SAINT score'], db1['T_correlation_CC'])
+    pearson_wr = sp.stats.pearsonr(db1['SAINT score'], db1['R_correlation_CC'])
+    pearson_nt = sp.stats.pearsonr(db2['SAINT score'], db2['T_correlation_CC'])
+    pearson_nr = sp.stats.pearsonr(db2['SAINT score'], db2['R_correlation_CC'])
+    return ([pearson_wt,pearson_wr,pearson_nt,pearson_nr])
+
 
 
 if __name__ == '__main__':
@@ -115,6 +132,8 @@ if __name__ == '__main__':
     full_corr=full_corr.set_index('Gene')
     full_positions=full_corr.iloc[:,:2]
     full_positions=full_positions.dropna()
+    main_curr=full_corr.iloc[:,2:4]
+    main_curr=main_curr.dropna()
     interactions=pd.read_excel(xls,'4.viral-host PR8')
     bank= pd.read_excel(xls,'1.Gene expression')
     #corr=total_file.dropna()
@@ -160,7 +179,23 @@ if __name__ == '__main__':
     single_pr8 = all_pr8[not_dup]
     background2 = single_pr8.join(full_positions)
     background2 = background2.dropna()
-    #ax2 = background2.plot.scatter(x='r_pos', y='t_pos', c='gray')
+    #saint correlations
+    corr_back = all_pr8.join(main_curr)
+    corr_back['Vrial gene ']=corr_back['Vrial gene '].apply(NaN_fix)
+    corr_back = corr_back.dropna()
+    ha_prot_corr = corr_back[corr_back['Vrial gene '] == "HA"]
+    m1_prot_corr = corr_back[corr_back['Vrial gene '] == "M1"]
+    m2_prot_corr = corr_back[corr_back['Vrial gene '] == "M2"]
+    pb1_prot_corr = corr_back[corr_back['Vrial gene '] == "PB1"]
+    pb1f2_prot_corr = corr_back[corr_back['Vrial gene '] == "PB1F2"]
+    pa_prot_corr = corr_back[corr_back['Vrial gene '] == "PA"]
+    pb2_prot_corr = corr_back[corr_back['Vrial gene '] == "PB2"]
+    na_prot_corr = corr_back[corr_back['Vrial gene '] == "Na"]
+    np_prot_corr = corr_back[corr_back['Vrial gene '] == "NP"]
+    ns1_prot_corr = corr_back[corr_back['Vrial gene '] == "NS1"]
+    ns2_prot_corr = corr_back[corr_back['Vrial gene '] == "NS2"]
+    pearson_calc()
+    #enrichment analysis
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
     inf_inter = inf_inter.drop([0, 1])
@@ -178,17 +213,24 @@ if __name__ == '__main__':
     np_prot = inf_inter[inf_inter['Vrial gene '] == "NP"]
     ns1_prot = inf_inter[inf_inter['Vrial gene '] == "NS1"]
     ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
-    vectors=vector_creator(pa_prot,"t")
-    results=ranksums(vectors[0],vectors[1])
+    vectors=vector_creator(ns2_prot,"r")
+    results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
     statval=results[0]
+    results = ranksums(vectors[0], vectors[1])
+    pval = results[1]
+    statval = results[0]
+    results = ranksums(vectors[0], vectors[1], alternative="greater")
+    pval = results[1]
+    statval = results[0]
     log_pval=math.log(pval)*-1
     act=vectors[2]
     rep = act.index.duplicated(keep='first')
     not_rep = ~rep
     act = act[not_rep]
-    ax2=sns.relplot(data=background2, x='R_position', y='T_position', color="blue")
+    ax2=sns.relplot(data=background2, x='R_position', y='T_position', color='blue')
     sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
+    plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="copper")
     plt.show()
 
 
