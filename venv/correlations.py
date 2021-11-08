@@ -82,18 +82,18 @@ def translate_full(gene,file,dictt):
         name="Skp1a"
     return name
 
-def vector_creator(db,prog):
+def vector_creator(db,prog,background):
     base=db.join(full_positions)
     base=base.dropna()
     if prog=="t":
         vector1 = base['T_position']
         vector1 = vector1.to_numpy()
-        vector2 = background2['T_position']
+        vector2 = background['T_position']
         vector2 = vector2.to_numpy()
     if prog=="r":
         vector1 = base['R_position']
         vector1 = vector1.to_numpy()
-        vector2 = background2['R_position']
+        vector2 = background['R_position']
         vector2 = vector2.to_numpy()
     return (vector1,vector2,base)
 
@@ -119,6 +119,12 @@ def pearson_calc(db):
     pearson_nt = sp.stats.pearsonr(db2['SAINT score'], db2['T_correlation_CC'])
     pearson_nr = sp.stats.pearsonr(db2['SAINT score'], db2['R_correlation_CC'])
     return ([pearson_wt,pearson_wr,pearson_nt,pearson_nr])
+
+def df_creator(df,prot):
+    res=df[df['Vrial gene ']== prot]
+    return res
+
+
 
 
 
@@ -180,7 +186,7 @@ if __name__ == '__main__':
     background2 = single_pr8.join(full_positions)
     background2 = background2.dropna()
     #saint correlations
-    corr_back = all_pr8.join(main_curr)
+    '''corr_back = all_pr8.join(main_curr)
     corr_back['Vrial gene ']=corr_back['Vrial gene '].apply(NaN_fix)
     corr_back = corr_back.dropna()
     ha_prot_corr = corr_back[corr_back['Vrial gene '] == "HA"]
@@ -194,8 +200,21 @@ if __name__ == '__main__':
     np_prot_corr = corr_back[corr_back['Vrial gene '] == "NP"]
     ns1_prot_corr = corr_back[corr_back['Vrial gene '] == "NS1"]
     ns2_prot_corr = corr_back[corr_back['Vrial gene '] == "NS2"]
-    pearson_calc(ns2_prot_corr)
+    pearson_calc(ns2_prot_corr)'''
+
     #enrichment analysis - pr8 db
+    all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
+    all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
+    all_pr8 = all_pr8.drop([0, 1, 2])
+    all_pr8 = all_pr8.rename({"Spectral count": "sc rep1", np.nan: "sc rep2"}, axis=1)
+    all_pr8['Gene'] = all_pr8['Gene'].apply(translate)
+    all_pr8 = all_pr8.set_index('Gene')
+    is_dup = all_pr8.index.duplicated(keep='first')
+    not_dup = ~is_dup
+    single_pr8 = all_pr8[not_dup]
+    background2 = single_pr8.join(full_positions)
+    background2 = background2.dropna()
+    
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
     inf_inter = inf_inter.drop([0, 1])
@@ -215,22 +234,57 @@ if __name__ == '__main__':
     ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
 
     #enrichment analysis - other strains db
-    other_inter= pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
-
-
-
-
-
-    vectors=vector_creator(ns2_prot,"r")
+    all_other = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\other strains complete.xlsx")
+    all_other = all_other.rename(columns=all_other.iloc[1])
+    all_other = all_other.drop([0, 1, 2])
+    all_other = all_other.rename({"Spectral count": "sc rep1", np.nan: "sc rep2"}, axis=1)
+    all_other['Gene'] = all_other['Gene'].apply(translate)
+    all_other = all_other.set_index('Gene')
+    background3 = all_other.join(full_positions)
+    background3 = background3.dropna()
+    aichi_all = background3[background3['Strain'] == "Aichi"]
+    dup = aichi_all.index.duplicated(keep='first')
+    isnt_dup = ~dup
+    single_aichi = aichi_all[isnt_dup]
+    NY2009_all = background3[background3['Strain'] == "NY/2009"]
+    dup = NY2009_all.index.duplicated(keep='first')
+    isnt_dup = ~dup
+    single_NY2009 = NY2009_all[isnt_dup]
+    WSN33_all = background3[background3['Strain'] == "WSN/33"]
+    dup = WSN33_all.index.duplicated(keep='first')
+    isnt_dup = ~dup
+    single_WSN33 = WSN33_all[isnt_dup]
+    H5N1_all = background3[background3['Strain'] == "H5N1"]
+    dup = H5N1_all.index.duplicated(keep='first')
+    isnt_dup = ~dup
+    single_H5N1 = H5N1_all[isnt_dup]
+    other_inter= pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\other strains.xlsx')
+    other_inter=other_inter.dropna()
+    #other_inter.rename(columns={'Supplemenatry Data 6: IAV-host protein interactomes': 'Strain'}, inplace=True)
+    header=other_inter.iloc[0]
+    other_inter.columns=header
+    other_inter=other_inter.drop(other_inter.index[:1])
+    other_inter['Gene ID'] = other_inter['Gene ID'].apply(translate)
+    other_inter = other_inter.set_index('Gene ID')
+    other_inter['Vrial gene '] = other_inter['Vrial gene '].apply(NaN_fix)
+    aichi_inter=other_inter[other_inter['Strain'] == "Aichi"]
+    NY2009_inter = other_inter[other_inter['Strain'] == "NY/2009"]
+    WSN33_inter = other_inter[other_inter['Strain'] == "WSN/33"]
+    H5N1_inter = other_inter[other_inter['Strain'] == "H5N1"]
+    prot_check=df_creator(H5N1_inter,"PB2")
+    vectors=vector_creator(prot_check,"t",single_H5N1)
     results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
     statval=results[0]
+    print(pval,statval)
     results = ranksums(vectors[0], vectors[1])
     pval = results[1]
     statval = results[0]
+    print(pval, statval)
     results = ranksums(vectors[0], vectors[1], alternative="greater")
     pval = results[1]
     statval = results[0]
+    print(pval, statval)
     log_pval=math.log(pval)*-1
     act=vectors[2]
     rep = act.index.duplicated(keep='first')
@@ -238,7 +292,7 @@ if __name__ == '__main__':
     act = act[not_rep]
     ax2=sns.relplot(data=background2, x='R_position', y='T_position', color='blue')
     sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
-    plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
+    #plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
     plt.show()
 
 
