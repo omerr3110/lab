@@ -68,6 +68,7 @@ def create_dict(file):
 def translate(gene):
     return translate_full(gene,full_corr,trans_dict)
 
+
 def translate_full(gene,file,dictt):
     name=gene
     if gene in dictt.keys():
@@ -124,6 +125,16 @@ def df_creator(df,prot):
     res=df[df['Vrial gene ']== prot]
     return res
 
+
+def rep_rank(lists):
+    dict={}
+    for list in lists:
+        for prot in list:
+            if prot in dict:
+                dict[prot]=dict[prot]+1
+            else:
+                dict[prot]=1
+    return dict
 
 
 
@@ -271,9 +282,9 @@ if __name__ == '__main__':
     NY2009_inter = other_inter[other_inter['Strain'] == "NY/2009"]
     WSN33_inter = other_inter[other_inter['Strain'] == "WSN/33"]
     H5N1_inter = other_inter[other_inter['Strain'] == "H5N1"]
-    prot_check=df_creator(H5N1_inter,"PB2")
-    vectors=vector_creator(prot_check,"t",single_H5N1)
-    results=ranksums(vectors[0],vectors[1],alternative="less")
+    prot_check=df_creator(aichi_inter,"NS1")
+    vectors=vector_creator(prot_check,"t",single_aichi)
+    '''results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
     statval=results[0]
     print(pval,statval)
@@ -290,10 +301,17 @@ if __name__ == '__main__':
     rep = act.index.duplicated(keep='first')
     not_rep = ~rep
     act = act[not_rep]
-    ax2=sns.relplot(data=background2, x='R_position', y='T_position', color='blue')
+    ax2=sns.relplot(data=single_aichi, x='R_position', y='T_position', color='blue')
     sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
     #plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
-    plt.show()
+    plt.show()'''
+    np_inter = other_inter[other_inter['Vrial gene '] == "NP"]
+    m2_inter = other_inter[other_inter['Vrial gene '] == "M2"]
+    ns1_inter = other_inter[other_inter['Vrial gene '] == "NS1"]
+    pb1_inter = other_inter[other_inter['Vrial gene '] == "PB1"]
+    pb2_inter = other_inter[other_inter['Vrial gene '] == "PB2"]
+    count=np_inter.index.value_counts(sort=False)
+
 
 
 
