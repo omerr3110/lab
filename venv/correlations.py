@@ -1,13 +1,13 @@
+#%%
 import math
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import scipy as sp
 from scipy.stats import ranksums
-
-
+#%%
+#1
 
 def grade_calc(ser):
     grade=ser.sum()/12
@@ -86,6 +86,7 @@ def translate_full(gene,file,dictt):
 def vector_creator(db,prog,background):
     base=db.join(full_positions)
     base=base.dropna()
+    base=keep_first(base)
     if prog=="t":
         vector1 = base['T_position']
         vector1 = vector1.to_numpy()
@@ -136,10 +137,12 @@ def rep_rank(lists):
                 dict[prot]=1
     return dict
 
+def strain_repair(name):
+    if pd.isna(name):
+        return "PR8"
+    return name
 
-
-
-if __name__ == '__main__':
+    #%%
     #total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
     #total_file.rename(columns={'Unnamed: 0': 'Gene','Unnamed: 1': 't_pos','Unnamed: 2': 'r_pos'}, inplace=True)
     xls=pd.ExcelFile(r'C:\Users\omerr\PycharmProjects\lab\venv\Cell2009_Shapira_et al_data.xls')
@@ -163,7 +166,7 @@ if __name__ == '__main__':
     #r_grades=[grade_calc(R_file.iloc[i]) for i in range(num)]
     #corr['average_t_grade']=t_grades
     #corr['average_r_grade']=r_grades
-    translation=pd.read_csv(r'HMD_HumanPhenotype.rpt.txt',delimiter="\t")
+    translation=pd.read_csv(r'C:\Users\omerr\PycharmProjects\lab\venv\HMD_HumanPhenotype.rpt.txt',delimiter="\t")
     translation.columns=['1','2','3','4','5','6']
     translation=translation.dropna(axis=1)
     dicts=create_dict(translation)
@@ -182,8 +185,8 @@ if __name__ == '__main__':
     sns.set_theme()
     graph1=sns.relplot(data=background,x='r_pos',y='t_pos',color="grey")
     sns.scatterplot(data=active,x='r_pos',y='t_pos',color="red")'''
-
-
+#3
+    # %%
     #second_db
     all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
     all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
@@ -212,7 +215,7 @@ if __name__ == '__main__':
     ns1_prot_corr = corr_back[corr_back['Vrial gene '] == "NS1"]
     ns2_prot_corr = corr_back[corr_back['Vrial gene '] == "NS2"]
     pearson_calc(ns2_prot_corr)'''
-
+#%%
     #enrichment analysis - pr8 db
     all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
     all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
@@ -225,7 +228,6 @@ if __name__ == '__main__':
     single_pr8 = all_pr8[not_dup]
     background2 = single_pr8.join(full_positions)
     background2 = background2.dropna()
-    
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
     inf_inter = inf_inter.drop([0, 1])
@@ -243,7 +245,7 @@ if __name__ == '__main__':
     np_prot = inf_inter[inf_inter['Vrial gene '] == "NP"]
     ns1_prot = inf_inter[inf_inter['Vrial gene '] == "NS1"]
     ns2_prot = inf_inter[inf_inter['Vrial gene '] == "NS2"]
-
+    #%%
     #enrichment analysis - other strains db
     all_other = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\other strains complete.xlsx")
     all_other = all_other.rename(columns=all_other.iloc[1])
@@ -254,21 +256,13 @@ if __name__ == '__main__':
     background3 = all_other.join(full_positions)
     background3 = background3.dropna()
     aichi_all = background3[background3['Strain'] == "Aichi"]
-    dup = aichi_all.index.duplicated(keep='first')
-    isnt_dup = ~dup
-    single_aichi = aichi_all[isnt_dup]
+    single_aichi = keep_first(aichi_all)
     NY2009_all = background3[background3['Strain'] == "NY/2009"]
-    dup = NY2009_all.index.duplicated(keep='first')
-    isnt_dup = ~dup
-    single_NY2009 = NY2009_all[isnt_dup]
+    single_NY2009 = keep_first(NY2009_all)
     WSN33_all = background3[background3['Strain'] == "WSN/33"]
-    dup = WSN33_all.index.duplicated(keep='first')
-    isnt_dup = ~dup
-    single_WSN33 = WSN33_all[isnt_dup]
+    single_WSN33 = keep_first(WSN33_all)
     H5N1_all = background3[background3['Strain'] == "H5N1"]
-    dup = H5N1_all.index.duplicated(keep='first')
-    isnt_dup = ~dup
-    single_H5N1 = H5N1_all[isnt_dup]
+    single_H5N1 = keep_first(H5N1_all)
     other_inter= pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\other strains.xlsx')
     other_inter=other_inter.dropna()
     #other_inter.rename(columns={'Supplemenatry Data 6: IAV-host protein interactomes': 'Strain'}, inplace=True)
@@ -282,9 +276,11 @@ if __name__ == '__main__':
     NY2009_inter = other_inter[other_inter['Strain'] == "NY/2009"]
     WSN33_inter = other_inter[other_inter['Strain'] == "WSN/33"]
     H5N1_inter = other_inter[other_inter['Strain'] == "H5N1"]
-    prot_check=df_creator(aichi_inter,"NS1")
-    vectors=vector_creator(prot_check,"t",single_aichi)
-    '''results=ranksums(vectors[0],vectors[1],alternative="less")
+    #%%
+    #5
+    prot_check=df_creator(WSN33_inter,"NP")
+    vectors=vector_creator(prot_check,"t",single_WSN33)
+    results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
     statval=results[0]
     print(pval,statval)
@@ -304,13 +300,63 @@ if __name__ == '__main__':
     ax2=sns.relplot(data=single_aichi, x='R_position', y='T_position', color='blue')
     sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
     #plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
-    plt.show()'''
+    # %%
+    #6
     np_inter = other_inter[other_inter['Vrial gene '] == "NP"]
+    np_total = np_inter.append(np_prot)
+    np_single = keep_first(np_total)
+    np_single.columns.name = None
+    count = np_total.index.value_counts(sort=False)
+    np_single = np_single.assign(count=count)
+    np_single['Strain'] = np_single['Strain'].apply(strain_repair)
+
     m2_inter = other_inter[other_inter['Vrial gene '] == "M2"]
+    m2_total = m2_inter.append(m2_prot)
+    m2_single = keep_first(m2_total)
+    m2_single.columns.name = None
+    count = m2_total.index.value_counts(sort=False)
+    m2_single = m2_single.assign(count=count)
+    m2_single['Strain'] = m2_single['Strain'].apply(strain_repair)
+
     ns1_inter = other_inter[other_inter['Vrial gene '] == "NS1"]
+    ns1_total = ns1_inter.append(ns1_prot)
+    ns1_single = keep_first(ns1_total)
+    ns1_single.columns.name = None
+    count = ns1_total.index.value_counts(sort=False)
+    ns1_single = ns1_single.assign(count=count)
+    ns1_single['Strain'] = ns1_single['Strain'].apply(strain_repair)
+
     pb1_inter = other_inter[other_inter['Vrial gene '] == "PB1"]
+    pb1_total = pb1_inter.append(pb1_prot)
+    pb1_single = keep_first(pb1_total)
+    pb1_single.columns.name = None
+    count = pb1_total.index.value_counts(sort=False)
+    pb1_single = pb1_single.assign(count=count)
+    pb1_single['Strain'] = pb1_single['Strain'].apply(strain_repair)
+
     pb2_inter = other_inter[other_inter['Vrial gene '] == "PB2"]
-    count=np_inter.index.value_counts(sort=False)
+    pb2_total = pb2_inter.append(pb2_prot)
+    pb2_single = keep_first(pb2_total)
+    pb2_single.columns.name = None
+    count = pb2_total.index.value_counts(sort=False)
+    pb2_single = pb2_single.assign(count=count)
+    pb2_single['Strain'] = pb2_single['Strain'].apply(strain_repair)
+    full_background=background3.append(background2)
+    full_background['Strain']=full_background['Strain'].apply(strain_repair)
+    full_single_background = keep_first(full_background)
+    vectors=vector_creator(pb2_single,'t',full_single_background)
+    plt.scatter(data=vectors[2], x='R_position', y='T_position',c='count',cmap="YlGn")
+    print(vectors[2])
+    plt.show()
+
+
+
+
+
+
+
+
+
 
 
 
