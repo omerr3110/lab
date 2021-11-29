@@ -228,6 +228,7 @@ def strain_repair(name):
     single_pr8 = all_pr8[not_dup]
     background2 = single_pr8.join(full_positions)
     background2 = background2.dropna()
+    background2=keep_first(background2)
     inf_inter = pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\PR8 SAINT TOP.xlsx')
     inf_inter = inf_inter.rename(columns=inf_inter.iloc[1])
     inf_inter = inf_inter.drop([0, 1])
@@ -265,7 +266,6 @@ def strain_repair(name):
     single_H5N1 = keep_first(H5N1_all)
     other_inter= pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\other strains.xlsx')
     other_inter=other_inter.dropna()
-    #other_inter.rename(columns={'Supplemenatry Data 6: IAV-host protein interactomes': 'Strain'}, inplace=True)
     header=other_inter.iloc[0]
     other_inter.columns=header
     other_inter=other_inter.drop(other_inter.index[:1])
@@ -278,8 +278,8 @@ def strain_repair(name):
     H5N1_inter = other_inter[other_inter['Strain'] == "H5N1"]
     #%%
     #5
-    prot_check=df_creator(WSN33_inter,"NP")
-    vectors=vector_creator(prot_check,"t",single_WSN33)
+    prot_check=df_creator(aichi_inter,"NS1")
+    vectors=vector_creator(prot_check,"r",single_aichi)
     results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
     statval=results[0]
@@ -297,8 +297,10 @@ def strain_repair(name):
     rep = act.index.duplicated(keep='first')
     not_rep = ~rep
     act = act[not_rep]
-    ax2=sns.relplot(data=single_aichi, x='R_position', y='T_position', color='blue')
-    sns.scatterplot(data=act, x='R_position', y='T_position', color="red")
+    ax2=sns.scatterplot(data=single_aichi, x='T_position', y='R_position', color='gray')
+    sns.scatterplot(data=act, x='T_position', y='R_position', color="red")
+    ax2.set(title='Aichi - NS1')
+    plt.show()
     #plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
     # %%
     #6
@@ -317,6 +319,7 @@ def strain_repair(name):
     count = m2_total.index.value_counts(sort=False)
     m2_single = m2_single.assign(count=count)
     m2_single['Strain'] = m2_single['Strain'].apply(strain_repair)
+    m2_single.loc['Gm11127','count']=4
 
     ns1_inter = other_inter[other_inter['Vrial gene '] == "NS1"]
     ns1_total = ns1_inter.append(ns1_prot)
@@ -341,13 +344,19 @@ def strain_repair(name):
     count = pb2_total.index.value_counts(sort=False)
     pb2_single = pb2_single.assign(count=count)
     pb2_single['Strain'] = pb2_single['Strain'].apply(strain_repair)
+
     full_background=background3.append(background2)
     full_background['Strain']=full_background['Strain'].apply(strain_repair)
     full_single_background = keep_first(full_background)
-    vectors=vector_creator(pb2_single,'t',full_single_background)
-    plt.scatter(data=vectors[2], x='R_position', y='T_position',c='count',cmap="YlGn")
-    print(vectors[2])
+    vectors=vector_creator(np_single,'t',full_single_background)
+    col_dict={0:"mistyrose",1:"rosybrown",2:"salmon",3:"indianred",4:"firebrick",5:"darkred"}
+    a=sns.scatterplot(data=vectors[2], x='T_position', y='R_position',hue='count',palette=col_dict,size='count')
+    a.axis('equal')
+    a.set(title='np interactions count')
+
     plt.show()
+
+    #combine p values
 
 
 
