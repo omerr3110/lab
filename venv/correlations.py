@@ -1,5 +1,6 @@
 #%%
 import math
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,9 +85,10 @@ def translate_full(gene,file,dictt):
     return name
 
 def vector_creator(db,prog,background):
-    base=db.join(full_positions)
-    base=base.dropna()
-    base=keep_first(base)
+    base=db
+    #base=db.join(full_positions)
+    #base=base.dropna()
+    #base=keep_first(base)
     if prog=="t":
         vector1 = base['T_position']
         vector1 = vector1.to_numpy()
@@ -142,6 +144,14 @@ def strain_repair(name):
         return "PR8"
     return name
 
+def str_split(str):
+    test =str
+    pattern = re.compile(r'\s+')
+    test = re.sub(pattern, '', test)
+    list=re.split(",",test)
+    return list
+
+
     #%%
     #total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
     #total_file.rename(columns={'Unnamed: 0': 'Gene','Unnamed: 1': 't_pos','Unnamed: 2': 'r_pos'}, inplace=True)
@@ -155,6 +165,18 @@ def strain_repair(name):
     main_curr=full_corr.iloc[:,2:4]
     main_curr=main_curr.dropna()
     interactions=pd.read_excel(xls,'4.viral-host PR8')
+    interactions['PR8 viral protein'] = interactions['PR8 viral protein'].apply(str_split)
+    n = interactions.shape[0]
+    interactions['NS1'] = [0 for i in range(n)]
+    interactions['NS2'] = [0 for i in range(n)]
+    interactions['NP'] = [0 for i in range(n)]
+    interactions['PB1'] = [0 for i in range(n)]
+    interactions['PB2'] = [0 for i in range(n)]
+    interactions['PA'] = [0 for i in range(n)]
+    interactions['HA'] = [0 for i in range(n)]
+    interactions['NA'] = [0 for i in range(n)]
+    interactions['M1'] = [0 for i in range(n)]
+    interactions['M2'] = [0 for i in range(n)]
     bank= pd.read_excel(xls,'1.Gene expression')
     #corr=total_file.dropna()
     #corr = corr.set_index('Gene')
@@ -357,6 +379,106 @@ def strain_repair(name):
     plt.show()
 
     #combine p values
+
+    # %%
+#shapira pr8
+    for i in range(n):
+        prot_list=interactions.loc[i,'PR8 viral protein']
+        for protein in prot_list:
+            interactions.loc[i,protein]=1
+    interactions['Host symbol'] = interactions['Host symbol'].apply(translate)
+    interactions.set_index('Host symbol',inplace=True)
+    interactions=keep_first(interactions)
+    interactions = interactions.join(full_positions)
+    interactions = interactions.dropna()
+    shap_np = interactions[interactions['NP'] == 1]
+    shap_na = interactions[interactions['NA'] == 1]
+    shap_m1 = interactions[interactions['M1'] == 1]
+    shap_m2 = interactions[interactions['M2'] == 1]
+    shap_ns1 = interactions[interactions['NS1'] == 1]
+    shap_ns2 = interactions[interactions['NS2'] == 1]
+    shap_ha = interactions[interactions['HA'] == 1]
+    shap_pa = interactions[interactions['PA'] == 1]
+    shap_pb1 = interactions[interactions['PB1'] == 1]
+    shap_pb2 = interactions[interactions['PB2'] == 1]
+
+
+
+
+    # %%
+#shpira udorn
+    act_udorn = pd.read_excel(xls, '5.viral-host Udorn')
+    act_udorn['Udorn viral protein'] = act_udorn['Udorn viral protein'].apply(str_split)
+    n = act_udorn.shape[0]
+    act_udorn['NS1'] = [0 for i in range(n)]
+    act_udorn['NS2'] = [0 for i in range(n)]
+    act_udorn['NP'] = [0 for i in range(n)]
+    act_udorn['PB1'] = [0 for i in range(n)]
+    act_udorn['PB2'] = [0 for i in range(n)]
+    act_udorn['PA'] = [0 for i in range(n)]
+    act_udorn['HA'] = [0 for i in range(n)]
+    act_udorn['NA'] = [0 for i in range(n)]
+    act_udorn['M1'] = [0 for i in range(n)]
+    act_udorn['M2'] = [0 for i in range(n)]
+
+# %%
+    for i in range(n):
+        prot_list=act_udorn.loc[i,'Udorn viral protein']
+        for protein in prot_list:
+            act_udorn.loc[i,protein]=1
+
+    act_udorn['Host symbol'] = act_udorn['Host symbol'].apply(translate)
+    act_udorn.set_index('Host symbol', inplace=True)
+    act_udorn = keep_first(act_udorn)
+    act_udorn = act_udorn.join(full_positions)
+    act_udorn = act_udorn.dropna()
+    udorn_np = act_udorn[act_udorn['NP'] == 1]
+    udorn_na = act_udorn[act_udorn['NA'] == 1]
+    udorn_m1 = act_udorn[act_udorn['M1'] == 1]
+    udorn_m2 = act_udorn[act_udorn['M2'] == 1]
+    udorn_ns1 = act_udorn[act_udorn['NS1'] == 1]
+    udorn_ns2 = act_udorn[act_udorn['NS2'] == 1]
+    udorn_ha = act_udorn[act_udorn['HA'] == 1]
+    udorn_pa = act_udorn[act_udorn['PA'] == 1]
+    udorn_pb1 = act_udorn[act_udorn['PB1'] == 1]
+    udorn_pb2 = act_udorn[act_udorn['PB2'] == 1]
+
+
+    # %%
+    shap_background = keep_first(background)
+    vectors = vector_creator(udorn_pa, "t", shap_background)
+    results = ranksums(vectors[0], vectors[1], alternative="less")
+    pval = results[1]
+    statval = results[0]
+    print(pval, statval)
+    results = ranksums(vectors[0], vectors[1])
+    pval = results[1]
+    statval = results[0]
+    print(pval, statval)
+    results = ranksums(vectors[0], vectors[1], alternative="greater")
+    pval = results[1]
+    statval = results[0]
+    print(pval, statval)
+    act = vectors[2]
+    ax3 = sns.scatterplot(data=shap_background, x='T_position', y='R_position', color='gray')
+    sns.scatterplot(data=act, x='T_position', y='R_position', color="red")
+    ax3.set(title='Shapira Udorn - PA')
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
