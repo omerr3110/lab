@@ -7,9 +7,9 @@ import numpy as np
 import seaborn as sns
 import scipy as sp
 from scipy.stats import ranksums
+from Bio import SeqIO
 #%%
 #1
-
 def grade_calc(ser):
     grade=ser.sum()/12
     return grade
@@ -86,9 +86,9 @@ def translate_full(gene,file,dictt):
 
 def vector_creator(db,prog,background):
     base=db
-    #base=db.join(full_positions)
-    #base=base.dropna()
-    #base=keep_first(base)
+    base=db.join(full_positions)
+    base=base.dropna()
+    base=keep_first(base)
     if prog=="t":
         vector1 = base['T_position']
         vector1 = vector1.to_numpy()
@@ -152,7 +152,9 @@ def str_split(str):
     return list
 
 
-    #%%
+
+
+#%%
     #total_file=pd.read_excel(r'C:\Users\omerr\PycharmProjects\lab\venv\R_T_gene_correlation.xlsx')
     #total_file.rename(columns={'Unnamed: 0': 'Gene','Unnamed: 1': 't_pos','Unnamed: 2': 'r_pos'}, inplace=True)
     xls=pd.ExcelFile(r'C:\Users\omerr\PycharmProjects\lab\venv\Cell2009_Shapira_et al_data.xls')
@@ -207,8 +209,8 @@ def str_split(str):
     sns.set_theme()
     graph1=sns.relplot(data=background,x='r_pos',y='t_pos',color="grey")
     sns.scatterplot(data=active,x='r_pos',y='t_pos',color="red")'''
-#3
-    # %%
+
+# %%
     #second_db
     all_pr8 = pd.read_excel(r"C:\Users\omerr\PycharmProjects\lab\venv\PR8 complete.xlsx")
     all_pr8 = all_pr8.rename(columns=all_pr8.iloc[1])
@@ -300,8 +302,10 @@ def str_split(str):
     H5N1_inter = other_inter[other_inter['Strain'] == "H5N1"]
     #%%
     #5
-    prot_check=df_creator(aichi_inter,"NS1")
+    prot_check=df_creator(aichi_inter,"NP")
+    print(single_aichi)
     vectors=vector_creator(prot_check,"r",single_aichi)
+    print(vectors[2])
     results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
     statval=results[0]
@@ -319,11 +323,12 @@ def str_split(str):
     rep = act.index.duplicated(keep='first')
     not_rep = ~rep
     act = act[not_rep]
-    ax2=sns.scatterplot(data=single_aichi, x='T_position', y='R_position', color='gray')
-    sns.scatterplot(data=act, x='T_position', y='R_position', color="red")
-    ax2.set(title='Aichi - NS1')
+    #ax2=sns.scatterplot(data=single_aichi, x='T_position', y='R_position', color='gray')
+    #sns.scatterplot(data=act, x='T_position', y='R_position', color="red")
+    #ax2.set(title='Aichi - PB1')
     plt.show()
     #plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
+
     # %%
     #6
     np_inter = other_inter[other_inter['Vrial gene '] == "NP"]
@@ -378,7 +383,6 @@ def str_split(str):
 
     plt.show()
 
-    #combine p values
 
     # %%
 #shapira pr8
@@ -442,11 +446,37 @@ def str_split(str):
     udorn_pa = act_udorn[act_udorn['PA'] == 1]
     udorn_pb1 = act_udorn[act_udorn['PB1'] == 1]
     udorn_pb2 = act_udorn[act_udorn['PB2'] == 1]
+    #%%
+    full_fasta=SeqIO.parse(open(r"C:\Users\omerr\PycharmProjects\lab\venv\horfeome3.1.fa"),'fasta')
+    genes=[]
+    for fasta in full_fasta:
+        id = fasta.id
+        values=id.split("|")
+        gene=values[3]
+        if (gene!=""):
+            genes.append(gene)
+
+    col=[0 for i in range(len(genes))]
+    data={'col':col,'':genes}
+    correct_background = pd.DataFrame(data)
+    print(correct_background)
+    correct_background[''] = correct_background[''].apply(translate)
+    correct_background.set_index('', inplace=True)
+    correct_background = correct_background.join(full_positions)
+    #%%
+    correct_background=correct_background.dropna()
+    correct_background=keep_first(correct_background)
+    print(correct_background)
+
+
+
+
+
 
 
     # %%
-    shap_background = keep_first(background)
-    vectors = vector_creator(udorn_pa, "t", shap_background)
+
+    vectors = vector_creator(shap_pa, "t", correct_background)
     results = ranksums(vectors[0], vectors[1], alternative="less")
     pval = results[1]
     statval = results[0]
@@ -460,10 +490,137 @@ def str_split(str):
     statval = results[0]
     print(pval, statval)
     act = vectors[2]
-    ax3 = sns.scatterplot(data=shap_background, x='T_position', y='R_position', color='gray')
+
+    ax3 = sns.scatterplot(data=correct_background, x='T_position', y='R_position', color='gray')
     sns.scatterplot(data=act, x='T_position', y='R_position', color="red")
-    ax3.set(title='Shapira Udorn - PA')
+    ax3.set(title='Shapira Udorn - PB1')
     plt.show()
+
+    #%%
+    scores=pd.ExcelFile(r"C:\Users\omerr\PycharmProjects\lab\venv\scores.xlsx")
+    total_scores=pd.read_excel(scores,"total scores")
+    print(total_scores.columns)
+
+    # %%
+
+    np_rows=total_scores[total_scores['protein']=='np']
+    np_t_pvals=[np_rows['p-val Wang - pr8 T '].to_list()+np_rows['p-val Wang - aichi T '].to_list()+
+                np_rows['p-val Wang - ny T '].to_list()+
+                np_rows['p-val Wang - wsn T '].to_list()+np_rows['p-val Wang - h5n1 T '].to_list()+
+                np_rows['p-val Shapira - pr8 T '].to_list()+np_rows['p-val Shapira - udorn T '].to_list()]
+    np_t_pvals=np_t_pvals[0]
+    res_t = sp.stats.combine_pvalues(np_t_pvals)
+    np_r_pvals = [np_rows['p-val Wang - pr8 R'].to_list() + (1-np_rows['p-val Wang - aichi R']).to_list() +
+                  np_rows['p-val Wang - ny R'].to_list() +
+                  np_rows['p-val Wang - wsn R'].to_list() + np_rows['p-val Wang - h5n1 R'].to_list() +
+                  (1-np_rows['p-val Shapira - pr8 R']).to_list() + (1-np_rows['p-val Shapira - udorn R']).to_list()]
+    np_r_pvals = np_r_pvals[0]
+    res_r = sp.stats.combine_pvalues(np_r_pvals)
+    print(res_t, res_r)
+    #%%
+    ns1_rows = total_scores[total_scores['protein'] == 'ns1']
+    ns1_t_pvals = [ns1_rows['p-val Wang - pr8 T '].to_list() + (1-ns1_rows['p-val Wang - aichi T ']).to_list() +
+                   (1-ns1_rows['p-val Wang - ny T ']).to_list() +
+                   (1-ns1_rows['p-val Wang - wsn T ']).to_list() + ns1_rows['p-val Wang - h5n1 T '].to_list() +
+                   (1-ns1_rows['p-val Shapira - pr8 T ']).to_list() + ns1_rows['p-val Shapira - udorn T '].to_list()]
+    ns1_t_pvals = ns1_t_pvals[0]
+    res_t = sp.stats.combine_pvalues(ns1_t_pvals)
+    ns1_r_pvals = [ns1_rows['p-val Wang - pr8 R'].to_list() + ns1_rows['p-val Wang - aichi R'].to_list() +
+                  ns1_rows['p-val Wang - ny R'].to_list() +
+                  ns1_rows['p-val Wang - wsn R'].to_list() + ns1_rows['p-val Wang - h5n1 R'].to_list() +
+                  ns1_rows['p-val Shapira - pr8 R'].to_list() + ns1_rows['p-val Shapira - udorn R'].to_list()]
+    ns1_r_pvals = ns1_r_pvals[0]
+    res_r = sp.stats.combine_pvalues(ns1_r_pvals)
+    print(res_t, res_r)
+
+    #%%
+    pb1_rows = total_scores[total_scores['protein'] == 'pb1']
+    pb1_t_pvals = [(1-pb1_rows['p-val Wang - pr8 T ']).to_list() +
+                   pb1_rows['p-val Wang - ny T '].to_list() +
+                   pb1_rows['p-val Wang - wsn T '].to_list() + (1-pb1_rows['p-val Wang - h5n1 T ']).to_list() +
+                   (1-pb1_rows['p-val Shapira - pr8 T ']).to_list() + pb1_rows['p-val Shapira - udorn T '].to_list()]
+    pb1_t_pvals = pb1_t_pvals[0]
+    res_t = sp.stats.combine_pvalues(pb1_t_pvals)
+    pb1_r_pvals = [pb1_rows['p-val Wang - pr8 R'].to_list() +
+                   (1-pb1_rows['p-val Wang - ny R']).to_list() +
+                   pb1_rows['p-val Wang - wsn R'].to_list() + pb1_rows['p-val Wang - h5n1 R'].to_list() +
+                   pb1_rows['p-val Shapira - pr8 R'].to_list() + pb1_rows['p-val Shapira - udorn R'].to_list()]
+    pb1_r_pvals = pb1_r_pvals[0]
+    res_r = sp.stats.combine_pvalues(pb1_r_pvals)
+    print(res_t, res_r)
+
+    #%%
+    pb2_rows = total_scores[total_scores['protein'] == 'pb2']
+    pb2_t_pvals = [pb2_rows['p-val Wang - pr8 T '].to_list() +
+                   pb2_rows['p-val Wang - ny T '].to_list() +
+                   (1-pb2_rows['p-val Wang - wsn T ']).to_list() + pb2_rows['p-val Wang - h5n1 T '].to_list() +
+                   pb2_rows['p-val Shapira - pr8 T '].to_list() + pb2_rows['p-val Shapira - udorn T '].to_list()]
+    pb2_t_pvals = pb2_t_pvals[0]
+    res_t = sp.stats.combine_pvalues(pb2_t_pvals)
+    pb2_r_pvals = [pb2_rows['p-val Wang - pr8 R'].to_list() +
+                   (1 - pb2_rows['p-val Wang - ny R']).to_list() +
+                   pb2_rows['p-val Wang - wsn R'].to_list() + pb2_rows['p-val Wang - h5n1 R'].to_list() +
+                   pb2_rows['p-val Shapira - pr8 R'].to_list() + pb2_rows['p-val Shapira - udorn R'].to_list()]
+    pb2_r_pvals = pb2_r_pvals[0]
+    res_r = sp.stats.combine_pvalues(pb2_r_pvals)
+    print(res_t, res_r)
+
+    #%%
+    m2_rows = total_scores[total_scores['protein'] == 'm2']
+    m2_t_pvals = [(1-m2_rows['p-val Wang - pr8 T ']).to_list() +
+                  (1-m2_rows['p-val Wang - ny T ']).to_list() +
+                  (1-m2_rows['p-val Wang - wsn T ']).to_list() + m2_rows['p-val Wang - h5n1 T '].to_list() +
+                  m2_rows['p-val Shapira - pr8 T '].to_list() + m2_rows['p-val Shapira - udorn T '].to_list()]
+    m2_t_pvals = m2_t_pvals[0]
+    res_t = sp.stats.combine_pvalues(m2_t_pvals)
+    m2_r_pvals = [(1-m2_rows['p-val Wang - pr8 R']).to_list() +
+                  (1-m2_rows['p-val Wang - ny R']).to_list() +
+                  m2_rows['p-val Wang - wsn R'].to_list() + (1-m2_rows['p-val Wang - h5n1 R']).to_list() +
+                  m2_rows['p-val Shapira - pr8 R'].to_list() + m2_rows['p-val Shapira - udorn R'].to_list()]
+    m2_r_pvals = m2_r_pvals[0]
+    res_r = sp.stats.combine_pvalues(m2_r_pvals)
+    print(res_t, res_r)
+    #%%
+    pb2_single_three=pb2_single[pb2_single['count']==2]
+    print(pb2_single_three)
+    vectors=vector_creator(pb2_single_three,"r",full_single_background)
+    sorted_vals=np.sort(vectors[0])
+    print(sorted_vals)
+    min_val1=sorted_vals[0]
+    min_val2=sorted_vals[1]
+    min1=vectors[2][vectors[2]["R_position"]==min_val1]
+    min2=vectors[2][vectors[2]["R_position"]==min_val2]
+    print(min1)
+    print(min2)
+    #%%
+    print(pb2_total.loc['Wdr6'])
+    print(pb2_total.loc['Ctnnd1'])
+    print(pb2_total.loc['Adck3'])
+    print(pb2_total.loc['Slc25a1'])
+    print(pb2_total.loc['Patz1'])
+    print(pb2_total.loc['Ehmt1'])
+
+    #%%
+    sorted_vals = np.sort(udorn_pb2['R_position'])
+    print(sorted_vals)
+    min_val1 = sorted_vals[0]
+    min_val2 = sorted_vals[1]
+    min1 = udorn_pb2[udorn_pb2["R_position"] == min_val1]
+    min2 = udorn_pb2[udorn_pb2["R_position"] == min_val2]
+    print(min1)
+    print(min2)
+    print(udorn_pb2.columns)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
