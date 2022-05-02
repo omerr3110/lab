@@ -16,6 +16,7 @@ def grade_calc(ser):
 
 
 def virus_prot_grade_calc(base_file,trf,translator):
+    #not in use
     rows=base_file.shape[0]
     dict={'PA':[0,0,0],'M1':[0,0,0],'M2':[0,0,0],'HA':[0,0,0],'NA':[0,0,0],'NP':[0,0,0],'NS1':[0,0,0],'NS2':[0,0,0]
         ,'PB1':[0,0,0],'PB2':[0,0,0]}
@@ -50,6 +51,10 @@ def virus_prot_grade_calc(base_file,trf,translator):
 
 
 def create_dict(file):
+    """
+    :param file: file with human and mice genes
+    :return: two dictionaries to convert genes from each type
+    """
     n=file.shape[0]
     human_to_mouse={}
     mouse_to_human={}
@@ -71,6 +76,13 @@ def translate(gene):
 
 
 def translate_full(gene,file,dictt):
+    """
+
+    :param gene: a gene to translate
+    :param file: a file of genes to translate
+    :param dictt: a human-mice dictionary
+    :return: the translated name
+    """
     name=gene
     if gene in dictt.keys():
         for option in dictt[gene]:
@@ -85,9 +97,16 @@ def translate_full(gene,file,dictt):
     return name
 
 def vector_creator(db,prog,background):
+    """
+    creating vectors of positions for ranksums test
+    :param db: a data base of genes without positions
+    :param prog: R/T
+    :param background: background of genes to compare
+    :return: active positions, background positions, complete db
+    """
     base=db
     base=db.join(full_positions)
-    base=base.dropna()
+    #base=base.dropna()
     base=keep_first(base)
     if prog=="t":
         vector1 = base['T_position']
@@ -150,6 +169,19 @@ def str_split(str):
     test = re.sub(pattern, '', test)
     list=re.split(",",test)
     return list
+
+def shap_adapt(df,strain,prot):
+    """creating a new df from previous one in order to concat it to another df"""
+    n=df.shape[0]
+    new_df=df.iloc[:,:1]
+    new_df['Strain']=[strain for i in range(n)]
+    new_df['Vrial gene ']=[prot for i in range(n)]
+    return new_df
+
+
+
+
+
 
 
 
@@ -223,7 +255,7 @@ def str_split(str):
     single_pr8 = all_pr8[not_dup]
     background2 = single_pr8.join(full_positions)
     background2 = background2.dropna()
-    #saint correlations
+    #saint correlations - not in use
     '''corr_back = all_pr8.join(main_curr)
     corr_back['Vrial gene ']=corr_back['Vrial gene '].apply(NaN_fix)
     corr_back = corr_back.dropna()
@@ -301,10 +333,12 @@ def str_split(str):
     WSN33_inter = other_inter[other_inter['Strain'] == "WSN/33"]
     H5N1_inter = other_inter[other_inter['Strain'] == "H5N1"]
     #%%
-    #5
-    prot_check=df_creator(aichi_inter,"NP")
+    #5 - calculation of p_values using ranksum test
+    #prot_check=df_creator(aichi_inter,"NP")
+    #print(single_aichi)
+    print(m1_prot)
     print(single_aichi)
-    vectors=vector_creator(prot_check,"r",single_aichi)
+    vectors=vector_creator(m1_prot,"r",background2)
     print(vectors[2])
     results=ranksums(vectors[0],vectors[1],alternative="less")
     pval=results[1]
@@ -330,7 +364,7 @@ def str_split(str):
     #plt.scatter(data=background2, x='R_position', y='T_position',c='SAINT score',cmap="hot")
 
     # %%
-    #6
+    #6 - strains count for each protein - updated version later
     np_inter = other_inter[other_inter['Vrial gene '] == "NP"]
     np_total = np_inter.append(np_prot)
     np_single = keep_first(np_total)
@@ -385,7 +419,7 @@ def str_split(str):
 
 
     # %%
-#shapira pr8
+#7 -shapira pr8
     for i in range(n):
         prot_list=interactions.loc[i,'PR8 viral protein']
         for protein in prot_list:
@@ -410,7 +444,7 @@ def str_split(str):
 
 
     # %%
-#shpira udorn
+#8- shpira udorn - creating a table in which 1 = protein has interaction with viral protein 0 = doesn't interact
     act_udorn = pd.read_excel(xls, '5.viral-host Udorn')
     act_udorn['Udorn viral protein'] = act_udorn['Udorn viral protein'].apply(str_split)
     n = act_udorn.shape[0]
@@ -425,7 +459,6 @@ def str_split(str):
     act_udorn['M1'] = [0 for i in range(n)]
     act_udorn['M2'] = [0 for i in range(n)]
 
-# %%
     for i in range(n):
         prot_list=act_udorn.loc[i,'Udorn viral protein']
         for protein in prot_list:
@@ -447,6 +480,8 @@ def str_split(str):
     udorn_pb1 = act_udorn[act_udorn['PB1'] == 1]
     udorn_pb2 = act_udorn[act_udorn['PB2'] == 1]
     #%%
+    #9 - creating the background to the shapira data base
+
     full_fasta=SeqIO.parse(open(r"C:\Users\omerr\PycharmProjects\lab\venv\horfeome3.1.fa"),'fasta')
     genes=[]
     for fasta in full_fasta:
@@ -463,7 +498,6 @@ def str_split(str):
     correct_background[''] = correct_background[''].apply(translate)
     correct_background.set_index('', inplace=True)
     correct_background = correct_background.join(full_positions)
-    #%%
     correct_background=correct_background.dropna()
     correct_background=keep_first(correct_background)
     print(correct_background)
@@ -475,7 +509,7 @@ def str_split(str):
 
 
     # %%
-
+    #10 calculating p-values for shapira analysis
     vectors = vector_creator(shap_pa, "t", correct_background)
     results = ranksums(vectors[0], vectors[1], alternative="less")
     pval = results[1]
@@ -497,12 +531,13 @@ def str_split(str):
     plt.show()
 
     #%%
+    #11- importing the p-values scores from excel file
     scores=pd.ExcelFile(r"C:\Users\omerr\PycharmProjects\lab\venv\scores.xlsx")
     total_scores=pd.read_excel(scores,"total scores")
     print(total_scores.columns)
 
     # %%
-
+    #12 - calculating combined p-values of reccuring viral proteins
     np_rows=total_scores[total_scores['protein']=='np']
     np_t_pvals=[np_rows['p-val Wang - pr8 T '].to_list()+np_rows['p-val Wang - aichi T '].to_list()+
                 np_rows['p-val Wang - ny T '].to_list()+
@@ -517,12 +552,12 @@ def str_split(str):
     np_r_pvals = np_r_pvals[0]
     res_r = sp.stats.combine_pvalues(np_r_pvals)
     print(res_t, res_r)
-    #%%
+
     ns1_rows = total_scores[total_scores['protein'] == 'ns1']
-    ns1_t_pvals = [ns1_rows['p-val Wang - pr8 T '].to_list() + (1-ns1_rows['p-val Wang - aichi T ']).to_list() +
+    ns1_t_pvals = [(ns1_rows['p-val Wang - pr8 T ']).to_list() + (1-ns1_rows['p-val Wang - aichi T ']).to_list() +
                    (1-ns1_rows['p-val Wang - ny T ']).to_list() +
-                   (1-ns1_rows['p-val Wang - wsn T ']).to_list() + ns1_rows['p-val Wang - h5n1 T '].to_list() +
-                   (1-ns1_rows['p-val Shapira - pr8 T ']).to_list() + ns1_rows['p-val Shapira - udorn T '].to_list()]
+                   (1-ns1_rows['p-val Wang - wsn T ']).to_list() + (ns1_rows['p-val Wang - h5n1 T ']).to_list() +
+                   (1-ns1_rows['p-val Shapira - pr8 T ']).to_list() + (ns1_rows['p-val Shapira - udorn T ']).to_list()]
     ns1_t_pvals = ns1_t_pvals[0]
     res_t = sp.stats.combine_pvalues(ns1_t_pvals)
     ns1_r_pvals = [ns1_rows['p-val Wang - pr8 R'].to_list() + ns1_rows['p-val Wang - aichi R'].to_list() +
@@ -533,7 +568,6 @@ def str_split(str):
     res_r = sp.stats.combine_pvalues(ns1_r_pvals)
     print(res_t, res_r)
 
-    #%%
     pb1_rows = total_scores[total_scores['protein'] == 'pb1']
     pb1_t_pvals = [(1-pb1_rows['p-val Wang - pr8 T ']).to_list() +
                    pb1_rows['p-val Wang - ny T '].to_list() +
@@ -549,7 +583,6 @@ def str_split(str):
     res_r = sp.stats.combine_pvalues(pb1_r_pvals)
     print(res_t, res_r)
 
-    #%%
     pb2_rows = total_scores[total_scores['protein'] == 'pb2']
     pb2_t_pvals = [pb2_rows['p-val Wang - pr8 T '].to_list() +
                    pb2_rows['p-val Wang - ny T '].to_list() +
@@ -565,7 +598,6 @@ def str_split(str):
     res_r = sp.stats.combine_pvalues(pb2_r_pvals)
     print(res_t, res_r)
 
-    #%%
     m2_rows = total_scores[total_scores['protein'] == 'm2']
     m2_t_pvals = [(1-m2_rows['p-val Wang - pr8 T ']).to_list() +
                   (1-m2_rows['p-val Wang - ny T ']).to_list() +
@@ -580,19 +612,156 @@ def str_split(str):
     m2_r_pvals = m2_r_pvals[0]
     res_r = sp.stats.combine_pvalues(m2_r_pvals)
     print(res_t, res_r)
+
+
+
+
     #%%
-    pb2_single_three=pb2_single[pb2_single['count']==2]
+    #13 - calculating each interaction count through various strains
+    np_inter = other_inter[other_inter['Vrial gene '] == "NP"]
+    np_total = np_inter.append(np_prot)
+    add_ud=shap_adapt(udorn_np,"Udorn","NP")
+    add_pr=shap_adapt(shap_np,"PR8","NP")
+    np_full = np_total.append(add_ud)
+    np_full= np_full.append(add_pr)
+    np_single = keep_first(np_full)
+    np_single.columns.name = None
+    count = np_full.index.value_counts(sort=False)
+    np_single = np_single.assign(count=count)
+    np_single['Strain'] = np_single['Strain'].apply(strain_repair)
+    for index in add_pr.index:
+        strain=np_single.loc[index]['Strain']
+        if pd.isna(strain):
+            value = np_single.loc[index]['count']
+            np_single.at[index, 'count'] = (value - 1)
+        elif (strain!='Udorn') and (strain!='PR8'):
+            print(index)
+            value=np_single.loc[index]['count']
+            print(value)
+            np_single.at[index,'count']=(value-1)
+            print(np_single.loc[index].count)
+
+
+    m2_inter = other_inter[other_inter['Vrial gene '] == "M2"]
+    m2_total = m2_inter.append(m2_prot)
+    add_ud = shap_adapt(udorn_m2, "Udorn", "M2")
+    add_pr = shap_adapt(shap_m2, "PR8", "M2")
+    m2_full = m2_total.append(add_ud)
+    m2_full = m2_full.append(add_pr)
+    m2_single = keep_first(m2_full)
+    m2_single.columns.name = None
+    count = m2_full.index.value_counts(sort=False)
+    m2_single = m2_single.assign(count=count)
+    for index in add_pr.index:
+        strain=m2_single.loc[index]['Strain']
+        if pd.isna(strain):
+            value = m2_single.loc[index]['count']
+            m2_single.at[index, 'count'] = (value - 1)
+        elif (strain!='Udorn') and (strain!='PR8'):
+            print(index)
+            value=m2_single.loc[index]['count']
+            print(value)
+            m2_single.at[index,'count']=(value-1)
+            print(m2_single.loc[index].count)
+    m2_single['Strain'] = m2_single['Strain'].apply(strain_repair)
+    m2_single.loc['Gm11127', 'count'] = 4
+
+
+    ns1_inter = other_inter[other_inter['Vrial gene '] == "NS1"]
+    ns1_total = ns1_inter.append(ns1_prot)
+    add_ud = shap_adapt(udorn_ns1, "Udorn", "NS1")
+    add_pr = shap_adapt(shap_ns1, "PR8", "NS1")
+    ns1_full = ns1_total.append(add_ud)
+    ns1_full = ns1_full.append(add_pr)
+    ns1_single = keep_first(ns1_full)
+    ns1_single.columns.name = None
+    count = ns1_full.index.value_counts(sort=False)
+    ns1_single = ns1_single.assign(count=count)
+    for index in add_pr.index:
+        strain=ns1_single.loc[index]['Strain']
+        if pd.isna(strain):
+            value = ns1_single.loc[index]['count']
+            ns1_single.at[index, 'count'] = (value - 1)
+        elif (strain!='Udorn') and (strain!='PR8'):
+            print(index)
+            value=ns1_single.loc[index]['count']
+            print(value)
+            ns1_single.at[index,'count']=(value-1)
+            print(ns1_single.loc[index].count)
+    ns1_single['Strain'] = ns1_single['Strain'].apply(strain_repair)
+
+
+    pb1_inter = other_inter[other_inter['Vrial gene '] == "PB1"]
+    pb1_total = pb1_inter.append(pb1_prot)
+    add_ud = shap_adapt(udorn_pb1, "Udorn", "PB1")
+    add_pr = shap_adapt(shap_pb1, "PR8", "PB1")
+    pb1_full = pb1_total.append(add_ud)
+    pb1_full = pb1_full.append(add_pr)
+    pb1_single = keep_first(pb1_full)
+    pb1_single.columns.name = None
+    count = pb1_full.index.value_counts(sort=False)
+    pb1_single = pb1_single.assign(count=count)
+    for index in add_pr.index:
+        strain=pb1_single.loc[index]['Strain']
+        if pd.isna(strain):
+            value = pb1_single.loc[index]['count']
+            pb1_single.at[index, 'count'] = (value - 1)
+        elif (strain!='Udorn') and (strain!='PR8'):
+            print(index)
+            value=pb1_single.loc[index]['count']
+            print(value)
+            pb1_single.at[index,'count']=(value-1)
+            print(pb1_single.loc[index].count)
+    pb1_single['Strain'] = pb1_single['Strain'].apply(strain_repair)
+
+    pb2_inter = other_inter[other_inter['Vrial gene '] == "PB2"]
+    pb2_total = pb2_inter.append(pb2_prot)
+    add_ud = shap_adapt(udorn_pb2, "Udorn", "PB2")
+    add_pr = shap_adapt(shap_pb2, "PR8", "PB2")
+    pb2_full = pb2_total.append(add_ud)
+    pb2_full = pb2_full.append(add_pr)
+    pb2_single = keep_first(pb2_full)
+    pb2_single.columns.name = None
+    count = pb2_full.index.value_counts(sort=False)
+    pb2_single = pb2_single.assign(count=count)
+    for index in add_pr.index:
+        strain=pb2_single.loc[index]['Strain']
+        if pd.isna(strain):
+            value = pb2_single.loc[index]['count']
+            pb2_single.at[index, 'count'] = (value - 1)
+        elif (strain!='Udorn') and (strain!='PR8'):
+            print(index)
+            value=pb2_single.loc[index]['count']
+            print(value)
+            pb2_single.at[index,'count']=(value-1)
+            print(pb2_single.loc[index].count)
+    pb2_single['Strain'] = pb2_single['Strain'].apply(strain_repair)
+
+    full_background = background3.append(background2)
+    full_background['Strain'] = full_background['Strain'].apply(strain_repair)
+    full_single_background = keep_first(full_background)
+    vectors = vector_creator(pb2_single, 't', full_single_background)
+    #print(vectors[2])
+    col_dict = {0: "mistyrose", 1: "rosybrown", 2: "salmon", 3: "indianred", 4: "firebrick", 5: "darkred",6:"black"}
+    a = sns.scatterplot(data=vectors[2], x='T_position', y='R_position', hue='count', palette=col_dict, size='count')
+    a.axis('equal')
+    a.set(title='PB2 interactions count')
+
+    plt.show()
+    #%%
+    #14 - marking the human proteins with the minimal R value according to their strains count
+    pb2_single_three = pb2_single[pb2_single['count'] == 1]
     print(pb2_single_three)
-    vectors=vector_creator(pb2_single_three,"r",full_single_background)
-    sorted_vals=np.sort(vectors[0])
+    vectors = vector_creator(pb2_single_three, "r", full_single_background)
+    sorted_vals = np.sort(vectors[0])
     print(sorted_vals)
-    min_val1=sorted_vals[0]
-    min_val2=sorted_vals[1]
-    min1=vectors[2][vectors[2]["R_position"]==min_val1]
-    min2=vectors[2][vectors[2]["R_position"]==min_val2]
+    min_val1 = sorted_vals[3]
+    min_val2 = sorted_vals[4]
+    min1 = vectors[2][vectors[2]["R_position"] == min_val1]
+    min2 = vectors[2][vectors[2]["R_position"] == min_val2]
     print(min1)
     print(min2)
-    #%%
+    # %%
     print(pb2_total.loc['Wdr6'])
     print(pb2_total.loc['Ctnnd1'])
     print(pb2_total.loc['Adck3'])
@@ -600,7 +769,7 @@ def str_split(str):
     print(pb2_total.loc['Patz1'])
     print(pb2_total.loc['Ehmt1'])
 
-    #%%
+    # %%
     sorted_vals = np.sort(udorn_pb2['R_position'])
     print(sorted_vals)
     min_val1 = sorted_vals[0]
@@ -610,7 +779,15 @@ def str_split(str):
     print(min1)
     print(min2)
     print(udorn_pb2.columns)
-
+    # %%
+    sorted_vals = np.sort(shap_pb2['R_position'])
+    print(sorted_vals)
+    min_val1 = sorted_vals[0]
+    min_val2 = sorted_vals[1]
+    min1 = shap_pb2[shap_pb2["R_position"] == min_val1]
+    min2 = shap_pb2[shap_pb2["R_position"] == min_val2]
+    print(min1)
+    print(min2)
 
 
 
