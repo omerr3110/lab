@@ -92,7 +92,7 @@ def translate_full(gene,file,dictt):
     elif type(name)==type("str"):
         name=name.lower()
         name=name.capitalize()
-    if gene=="SKP1":
+    if gene=="SKP1": #mismatch between names in files
         name="Skp1a"
     return name
 
@@ -127,6 +127,10 @@ def NaN_fix(prot):
         return prot
 
 def keep_first(db):
+    """
+    :param db: a data base of interacting genes
+    :return: the same db without repetitions
+    """
     rep = db.index.duplicated(keep='first')
     not_rep = ~rep
     final = db[not_rep]
